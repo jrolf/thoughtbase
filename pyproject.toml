@@ -1,0 +1,130 @@
+[build-system]
+requires = ["hatchling>=1.18"]
+build-backend = "hatchling.build"
+
+[project]
+name = "thoughtbase"
+version = "0.1.0"
+description = "Deploy ThoughtFlow AI agents to the cloud as serverless APIs in 3 lines of Python."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [
+    { name = "James A. Rolfsen", email = "james@think.dev" }
+]
+maintainers = [
+    { name = "James A. Rolfsen", email = "james@think.dev" }
+]
+keywords = [
+    "agent",
+    "deployment",
+    "serverless",
+    "thoughtflow",
+    "cloud",
+    "api",
+    "lambda",
+    "ai",
+    "llm",
+    "orchestration",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+# Core dependency: requests for HTTP calls to the serverless backend
+dependencies = [
+    "requests>=2.20",
+]
+
+[project.optional-dependencies]
+# Companion library (not required -- agents are deployed as code strings)
+thoughtflow = ["thoughtflow>=0.0.6"]
+
+# Development dependencies
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.1",
+    "mypy>=1.0",
+    "pre-commit>=3.0",
+]
+
+# Everything
+all = [
+    "thoughtbase[thoughtflow]",
+    "thoughtbase[dev]",
+]
+
+[project.urls]
+Homepage = "https://github.com/jrolf/thoughtbase"
+Repository = "https://github.com/jrolf/thoughtbase"
+Issues = "https://github.com/jrolf/thoughtbase/issues"
+Changelog = "https://github.com/jrolf/thoughtbase/blob/main/CHANGELOG.md"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/thoughtbase"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "/README.md",
+    "/LICENSE",
+    "/CHANGELOG.md",
+]
+
+# ============================================================================
+# Tool Configurations
+# ============================================================================
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-v --tb=short"
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+
+[tool.coverage.run]
+source = ["src/thoughtbase"]
+branch = true
+omit = ["*/tests/*", "*/__pycache__/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_configs = true
+show_error_codes = true
+files = ["src/thoughtbase"]
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
