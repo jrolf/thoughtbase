@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "thoughtbase"
-version = "0.0.2"
+version = "0.0.3"
 description = "Deploy ThoughtFlow AI agents to the cloud as serverless APIs in 3 lines of Python."
 readme = "README.md"
 requires-python = ">=3.9"

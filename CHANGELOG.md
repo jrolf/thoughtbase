@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.0.3] - 2026-02-24
+
 ### Added
 - Secrets management: `set_secrets()`, `list_secrets()`, `delete_secrets()` for storing credentials server-side
 - `secrets` parameter on `call_agent()` and `test_agent()` for passing request-level secrets per-call
@@ -40,5 +44,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 <!-- Release links -->
-[Unreleased]: https://github.com/jrolf/thoughtbase/compare/v0.0.2...HEAD
+[Unreleased]: https://github.com/jrolf/thoughtbase/compare/v0.0.3...HEAD
+[0.0.3]: https://github.com/jrolf/thoughtbase/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/jrolf/thoughtbase/releases/tag/v0.0.2
