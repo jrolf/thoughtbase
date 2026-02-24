@@ -64,7 +64,7 @@ The library has **one dependency** — `requests` — and works with Python 3.9+
 pip install --upgrade thoughtbase
 
 # Pin to a specific version for stability
-pip install thoughtbase==0.1.0
+pip install thoughtbase==0.0.2
 
 # Check your installed version
 python -c "import thoughtbase; print(thoughtbase.__version__)"
