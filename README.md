@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" alt="ThoughtBase logo" width="200">
+  <img src="https://raw.githubusercontent.com/jrolf/thoughtbase/main/assets/logo.png" alt="ThoughtBase logo" width="400">
 </p>
 
 <h1 align="center">ThoughtBase</h1>
@@ -12,12 +12,19 @@
   <em>"Simple things should be simple.  Difficult things should be possible."</em>
 </p>
 
-<!-- Badges -->
+<!-- Primary badges: trust signals -->
 <p align="center">
   <a href="https://pypi.org/project/thoughtbase/"><img src="https://img.shields.io/pypi/v/thoughtbase?color=blue" alt="PyPI version"></a>
   <a href="https://pypi.org/project/thoughtbase/"><img src="https://img.shields.io/pypi/pyversions/thoughtbase" alt="Python versions"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
   <a href="https://github.com/jrolf/thoughtbase"><img src="https://img.shields.io/badge/build-passing-brightgreen" alt="Build"></a>
+  <a href="https://pepy.tech/project/thoughtbase"><img src="https://static.pepy.tech/badge/thoughtbase/month" alt="Downloads/month"></a>
+</p>
+
+<!-- Secondary badges: social + quality -->
+<p align="center">
+  <a href="https://github.com/jrolf/thoughtbase/stargazers"><img src="https://img.shields.io/github/stars/jrolf/thoughtbase?style=flat" alt="GitHub stars"></a>
+  <a href="https://github.com/jrolf/thoughtbase/commits/main"><img src="https://img.shields.io/github/last-commit/jrolf/thoughtbase" alt="Last commit"></a>
   <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>
 </p>
 
