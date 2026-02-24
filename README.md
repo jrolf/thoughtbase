@@ -81,12 +81,12 @@ The library has **one dependency** -- `requests` -- and works with Python 3.9+.
 # Upgrade to the latest version
 pip install --upgrade thoughtbase
 
-# Pin to a specific version for stability
-pip install thoughtbase==0.0.2
-
 # Check your installed version
 python -c "import thoughtbase; print(thoughtbase.__version__)"
 ```
+
+To pin to a specific version, use `pip install thoughtbase==X.Y.Z` where the
+latest version is shown in the badge above.
 
 If you also want ThoughtFlow locally (for authoring agents):
 
@@ -103,7 +103,7 @@ pip install thoughtbase[thoughtflow]
 You can set it as an environment variable (recommended):
 
 ```bash
-export TB_API_KEY="your-key-here"
+export THB_API_KEY="your-key-here"
 ```
 
 Or set it in your Python code:
@@ -297,10 +297,10 @@ The response looks like:
 
 | Function | Description |
 |---|---|
-| `set_api_key(key)` | Store your API key in the `TB_API_KEY` environment variable so all subsequent calls use it automatically. |
+| `set_api_key(key)` | Store your API key in the `THB_API_KEY` environment variable so all subsequent calls use it automatically. |
 
 Every function below accepts an optional `key` parameter.  If omitted, the
-value of the `TB_API_KEY` environment variable is used.
+value of the `THB_API_KEY` environment variable is used.
 
 ### Agent Deployment
 

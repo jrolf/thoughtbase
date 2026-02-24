@@ -22,7 +22,7 @@ _ADMIN_URL = "https://9fwiqamsta.execute-api.us-east-1" + _SUFFIX
 _EXEC_URL = "https://ivca9z4r7e.execute-api.us-east-1" + _SUFFIX
 
 # Environment variable used to store the user's API key
-_ENV_KEY = "TB_API_KEY"
+_ENV_KEY = "THB_API_KEY"
 
 
 # ---------------------------------------------------------------------------
@@ -34,7 +34,7 @@ def _resolve_key(key=""):
     """Return the API key to use for a request.
 
     If *key* is provided it is returned as-is.  Otherwise the value of
-    the ``TB_API_KEY`` environment variable is used.
+    the ``THB_API_KEY`` environment variable is used.
 
     Parameters
     ----------
@@ -122,7 +122,7 @@ def deploy_agent(code="", info=None, key=""):
     info : dict, optional
         Arbitrary metadata to attach to the agent.
     key : str, optional
-        API key.  Falls back to the ``TB_API_KEY`` environment variable.
+        API key.  Falls back to the ``THB_API_KEY`` environment variable.
 
     Returns
     -------
@@ -158,7 +158,7 @@ def update_agent(agent_id, code="", info=None, key=""):
     info : dict, optional
         New metadata to attach.
     key : str, optional
-        API key.  Falls back to ``TB_API_KEY``.
+        API key.  Falls back to ``THB_API_KEY``.
 
     Returns
     -------
@@ -184,7 +184,7 @@ def list_agents(user_id="", key=""):
     user_id : str, optional
         Restrict listing to a specific user (admin use).
     key : str, optional
-        API key.  Falls back to ``TB_API_KEY``.
+        API key.  Falls back to ``THB_API_KEY``.
 
     Returns
     -------
@@ -206,7 +206,7 @@ def get_agent_info(agent_id, key=""):
     agent_id : str
         The ID of the agent to inspect.
     key : str, optional
-        API key.  Falls back to ``TB_API_KEY``.
+        API key.  Falls back to ``THB_API_KEY``.
 
     Returns
     -------
@@ -239,7 +239,7 @@ def test_agent(code, fname, input_obj=None, key="", full=False):
     input_obj : object, optional
         Argument passed to the function.  Defaults to ``{}``.
     key : str, optional
-        API key.  Falls back to ``TB_API_KEY``.
+        API key.  Falls back to ``THB_API_KEY``.
     full : bool, optional
         If ``True``, return the full backend response instead of just
         the result value.
@@ -286,7 +286,7 @@ def call_agent(agent_id, fname, input_obj=None, key="", full=False):
     input_obj : object, optional
         Argument passed to the function.  Defaults to ``{}``.
     key : str, optional
-        API key.  Falls back to ``TB_API_KEY``.
+        API key.  Falls back to ``THB_API_KEY``.
     full : bool, optional
         If ``True``, return the full backend response.
 
@@ -335,7 +335,7 @@ def get_balance(user_id="", key=""):
     user_id : str, optional
         User to check (admin use).  Defaults to the authenticated user.
     key : str, optional
-        API key.  Falls back to ``TB_API_KEY``.
+        API key.  Falls back to ``THB_API_KEY``.
 
     Returns
     -------
@@ -357,7 +357,7 @@ def get_user_info(user_id="", key=""):
     user_id : str, optional
         User to look up (admin use).  Defaults to the authenticated user.
     key : str, optional
-        API key.  Falls back to ``TB_API_KEY``.
+        API key.  Falls back to ``THB_API_KEY``.
 
     Returns
     -------
@@ -381,7 +381,7 @@ def update_user_info(new_info, user_id="", key=""):
     user_id : str, optional
         Target user (admin use).  Defaults to the authenticated user.
     key : str, optional
-        API key.  Falls back to ``TB_API_KEY``.
+        API key.  Falls back to ``THB_API_KEY``.
 
     Returns
     -------
@@ -405,7 +405,7 @@ def gen_key(role="", user_id="", key=""):
     user_id : str, optional
         Target user (admin use).
     key : str, optional
-        API key.  Falls back to ``TB_API_KEY``.
+        API key.  Falls back to ``THB_API_KEY``.
 
     Returns
     -------
@@ -429,7 +429,7 @@ def del_key(key_to_delete, key=""):
     key_to_delete : str
         The key to revoke.
     key : str, optional
-        API key used for authentication.  Falls back to ``TB_API_KEY``.
+        API key used for authentication.  Falls back to ``THB_API_KEY``.
 
     Returns
     -------

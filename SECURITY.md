@@ -25,4 +25,4 @@ ThoughtBase sends Python code to a cloud backend for execution. Users should:
 - Use environment variables or secret management for credentials
 - Be aware that deployed code runs in a shared serverless environment
 - Review code before deploying to ensure it does not contain sensitive data
-- Use `set_api_key()` or the `TB_API_KEY` environment variable rather than hardcoding keys
+- Use `set_api_key()` or the `THB_API_KEY` environment variable rather than hardcoding keys

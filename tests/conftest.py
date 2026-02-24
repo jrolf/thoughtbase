@@ -29,15 +29,15 @@ def make_exec_response(payload):
 
 @pytest.fixture()
 def mock_api_key(monkeypatch):
-    """Set a fake TB_API_KEY environment variable for the test."""
-    monkeypatch.setenv("TB_API_KEY", "test-key-abc123")
+    """Set a fake THB_API_KEY environment variable for the test."""
+    monkeypatch.setenv("THB_API_KEY", "test-key-abc123")
     return "test-key-abc123"
 
 
 @pytest.fixture()
 def clear_api_key(monkeypatch):
-    """Ensure TB_API_KEY is not set."""
-    monkeypatch.delenv("TB_API_KEY", raising=False)
+    """Ensure THB_API_KEY is not set."""
+    monkeypatch.delenv("THB_API_KEY", raising=False)
 
 
 @pytest.fixture()

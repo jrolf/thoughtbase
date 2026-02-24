@@ -34,15 +34,15 @@ class TestSetApiKey:
     """Tests for set_api_key()."""
 
     def test_sets_env_var(self, monkeypatch):
-        """set_api_key should store the key in TB_API_KEY."""
-        monkeypatch.delenv("TB_API_KEY", raising=False)
+        """set_api_key should store the key in THB_API_KEY."""
+        monkeypatch.delenv("THB_API_KEY", raising=False)
         set_api_key("my-secret-key")
-        assert os.environ["TB_API_KEY"] == "my-secret-key"
+        assert os.environ["THB_API_KEY"] == "my-secret-key"
 
     def test_overwrites_existing(self, mock_api_key):  # noqa: ARG002
         """set_api_key should overwrite a previously set key."""
         set_api_key("new-key")
-        assert os.environ["TB_API_KEY"] == "new-key"
+        assert os.environ["THB_API_KEY"] == "new-key"
 
 
 # -----------------------------------------------------------------------
@@ -118,7 +118,7 @@ class TestDeployAgent:
         assert cap["json"]["request"]["info"] == {"name": "test"}
 
     def test_falls_back_to_env_key(self, mock_api_key, capture_post):  # noqa: ARG002
-        """deploy_agent with no explicit key should use TB_API_KEY."""
+        """deploy_agent with no explicit key should use THB_API_KEY."""
         cap = capture_post({"api_id": "agent-xyz"})
         deploy_agent(code="x")
         assert cap["json"]["api_key"] == "test-key-abc123"

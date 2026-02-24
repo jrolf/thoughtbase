@@ -6,7 +6,7 @@ a US zip code from four external APIs — location, elevation, weather,
 and sunrise/sunset — into a single response.
 
 Before running, set your API key:
-    export TB_API_KEY="your-key-here"
+    export THB_API_KEY="your-key-here"
 """
 
 import json

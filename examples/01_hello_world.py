@@ -4,7 +4,7 @@ ThoughtBase: Hello World
 The simplest possible example — deploy a function, then call it.
 
 Before running, set your API key:
-    export TB_API_KEY="your-key-here"
+    export THB_API_KEY="your-key-here"
 """
 
 from thoughtbase import call_agent, deploy_agent
