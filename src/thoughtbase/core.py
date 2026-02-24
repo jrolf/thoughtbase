@@ -14,12 +14,12 @@ import requests
 # Backend endpoints (AWS API Gateway -> Lambda)
 # ---------------------------------------------------------------------------
 
-_ADMIN_FUNC = "apimagic_admin_v02"
-_EXEC_FUNC = "apimagic_exec_v04"
+_ADMIN_FUNC = "apimagic_admin_v02"       # not yet migrated
+_EXEC_FUNC = "thoughtbase_exec_v01"
 
 _SUFFIX = ".amazonaws.com/prod/invoke"
 _ADMIN_URL = "https://9fwiqamsta.execute-api.us-east-1" + _SUFFIX
-_EXEC_URL = "https://ivca9z4r7e.execute-api.us-east-1" + _SUFFIX
+_EXEC_URL = "https://bdxwb8xftj.execute-api.us-east-1" + _SUFFIX
 
 # Environment variable used to store the user's API key
 _ENV_KEY = "THB_API_KEY"
