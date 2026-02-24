@@ -28,12 +28,14 @@
 
 <!-- Navigation -->
 <p align="center">
-  <a href="#-installation">Install</a> &bull;
-  <a href="#-quick-start">Quick Start</a> &bull;
-  <a href="#-deploy-a-thoughtflow-agent">Agent Example</a> &bull;
-  <a href="#-api-reference">API Reference</a> &bull;
-  <a href="#-supported-libraries">Libraries</a> &bull;
-  <a href="#-philosophy">Philosophy</a>
+  <a href="#what-is-thoughtbase">About</a> &bull;
+  <a href="#getting-access">Access</a> &bull;
+  <a href="#installation">Install</a> &bull;
+  <a href="#quick-start">Quick Start</a> &bull;
+  <a href="#full-example-multi-api-agent">Example</a> &bull;
+  <a href="#api-reference">API Reference</a> &bull;
+  <a href="#supported-libraries">Libraries</a> &bull;
+  <a href="#philosophy">Philosophy</a>
 </p>
 
 ---
@@ -46,8 +48,24 @@ Write your AI agent locally with ThoughtFlow, then deploy it to the cloud as a
 serverless API with a single function call.  No Docker, no Terraform, no YAML,
 no deployment pipelines.  Just Python.
 
-ThoughtBase works with *any* Python code — functions, classes, scripts — but it
+ThoughtBase works with *any* Python code -- functions, classes, scripts -- but it
 is purpose-built for shipping ThoughtFlow agents into production.
+
+---
+
+## Getting Access
+
+ThoughtBase is currently in **prototype** phase.
+
+To sign up for your **free API key** and **free credits**, connect with the
+creator, James Rolfsen, on LinkedIn:
+
+**[Connect on LinkedIn](https://www.linkedin.com/in/jamesrolfsen/)**
+
+Depending on demand, there may be a waitlist to ensure safe and scalable
+distribution of the service.
+
+Once you have your key, you're ready to install and start deploying.
 
 ---
 
@@ -57,7 +75,7 @@ is purpose-built for shipping ThoughtFlow agents into production.
 pip install thoughtbase
 ```
 
-The library has **one dependency** — `requests` — and works with Python 3.9+.
+The library has **one dependency** -- `requests` -- and works with Python 3.9+.
 
 ```bash
 # Upgrade to the latest version
@@ -82,17 +100,22 @@ pip install thoughtbase[thoughtflow]
 
 ### 1. Set your API key
 
+You can set it as an environment variable (recommended):
+
+```bash
+export TB_API_KEY="your-key-here"
+```
+
+Or set it in your Python code:
+
 ```python
 from thoughtbase import set_api_key
 
-set_api_key("YOUR_API_KEY")
+set_api_key("your-key-here")
 ```
 
-Or set it in your environment:
-
-```bash
-export TB_API_KEY="YOUR_API_KEY"
-```
+Once set, every subsequent function call uses it automatically -- you don't
+have to pass it again.
 
 ### 2. Deploy an agent (3 lines)
 
@@ -139,21 +162,22 @@ print(result)
 ```
 
 The code runs in the cloud but is not persisted as a permanent endpoint.
+This is useful for validating that your code works in the cloud runtime
+before committing it to a deployed agent.
 
 ---
 
-## Deploy a ThoughtFlow Agent
+## Full Example: Multi-API Agent
 
-This is where it gets powerful.  Any ThoughtFlow agent script can be deployed
-as a cloud API.
-
-Here is a complete example that deploys an agent which answers questions about
-any US zip code by aggregating data from four different external APIs:
+Here is a complete example that deploys a multi-function agent which answers
+questions about any US zip code by aggregating data from four different
+external APIs (location, elevation, weather, and sunrise/sunset):
 
 ```python
+import json
 from thoughtbase import set_api_key, deploy_agent, call_agent
 
-set_api_key("YOUR_API_KEY")
+set_api_key("your-key-here")
 
 # -----------------------------------------------------------------------
 # Define the agent code as a Python string
@@ -237,8 +261,6 @@ print(f"Deployed!  Agent ID: {agent_id}")
 # -----------------------------------------------------------------------
 
 output = call_agent(agent_id, "get_zip_info", 78749)
-
-import json
 print(json.dumps(output, indent=4))
 ```
 
@@ -275,40 +297,57 @@ The response looks like:
 
 | Function | Description |
 |---|---|
-| `set_api_key(key)` | Store your API key in the environment so all subsequent calls use it automatically |
+| `set_api_key(key)` | Store your API key in the `TB_API_KEY` environment variable so all subsequent calls use it automatically. |
+
+Every function below accepts an optional `key` parameter.  If omitted, the
+value of the `TB_API_KEY` environment variable is used.
 
 ### Agent Deployment
 
 | Function | Description |
 |---|---|
-| `deploy_agent(code, info={})` | Deploy Python code as a new serverless agent. Returns dict with `api_id` |
-| `update_agent(agent_id, code, info={})` | Update the code or metadata of an existing agent |
-| `list_agents()` | List all agents you have deployed |
-| `get_agent_info(agent_id)` | Get metadata about a deployed agent |
+| `deploy_agent(code, info, key)` | Deploy Python code as a new serverless agent. Returns a dict containing the `api_id` you use to call it later. |
+| `update_agent(agent_id, code, info, key)` | Update the code or metadata of an existing deployed agent. |
+| `list_agents(key)` | List all agents you have deployed. |
+| `get_agent_info(agent_id, key)` | Get metadata about a deployed agent. |
 
 ### Execution
 
 | Function | Description |
 |---|---|
-| `call_agent(agent_id, fname, input_obj)` | Call a function inside a deployed agent |
-| `test_agent(code, fname, input_obj)` | One-shot cloud execution without deploying |
+| `call_agent(agent_id, fname, input_obj, key)` | Call a function by name inside a deployed agent. |
+| `test_agent(code, fname, input_obj, key)` | One-shot cloud execution without deploying. Useful for testing before you commit to a permanent endpoint. |
+
+Both `call_agent` and `test_agent` accept a `full=True` option to return the
+complete backend response envelope instead of just the result value.
 
 ### Account Management
 
 | Function | Description |
 |---|---|
-| `get_balance()` | Check your remaining credit balance |
-| `get_user_info()` | Get information about your account |
-| `update_user_info(new_info)` | Update your account information |
-| `gen_key(role)` | Generate a new API key |
-| `del_key(key_to_delete)` | Delete an API key |
+| `get_balance(key)` | Check your remaining credit balance. Every API call consumes credits from your account. |
+| `get_user_info(key)` | Get information about your account. |
+| `update_user_info(new_info, key)` | Update your account information. |
+| `gen_key(role, key)` | Generate a new API key for your account. |
+| `del_key(key_to_delete, key)` | Revoke and delete an API key. |
 
 ### Utilities
 
 | Function | Description |
 |---|---|
-| `supported()` | List all 200+ Python modules available in the cloud runtime |
-| `welcome()` | Print the getting-started guide |
+| `supported()` | Return the list of all 200+ Python modules available in the cloud runtime. |
+| `welcome()` | Print the getting-started guide to the console. |
+
+---
+
+## Credits and Billing
+
+ThoughtBase uses a **credit-based** system.  Every API call (deploy, call,
+test, list, etc.) consumes a small number of credits from your account.
+
+- New accounts receive **free credits** upon signup.
+- Check your balance at any time with `get_balance()`.
+- Credits can be replenished by contacting the maintainer.
 
 ---
 
@@ -352,15 +391,15 @@ print(supported())
 └──────────────┘                  └──────────────────┘
 ```
 
-1. **You write** Python code — functions, classes, ThoughtFlow agents — as a string
-2. **`deploy_agent`** sends it to a serverless backend (AWS Lambda behind API Gateway)
-3. **The backend stores it** and returns an `agent_id`
-4. **`call_agent`** invokes any function inside the deployed code by name
-5. **The result** is returned as a Python object
+1. **You write** Python code -- functions, classes, ThoughtFlow agents -- as a string.
+2. **`deploy_agent`** sends it to a serverless backend (AWS Lambda behind API Gateway).
+3. **The backend stores it** and returns an `agent_id`.
+4. **`call_agent`** invokes any function inside the deployed code by name.
+5. **The result** is returned as a Python object.
 
-There is no container to manage, no server to provision, and no cold start to
-worry about.  Your code runs in a pre-warmed Python 3.12 environment with 200+
-libraries already installed.
+There is no container to manage, no server to provision, and no infrastructure
+to configure.  Your code runs in a pre-warmed Python 3.12 environment with
+200+ libraries already installed.
 
 ---
 
@@ -375,7 +414,7 @@ No configuration files, no build steps, no deployment ceremonies.
 **Difficult things should be possible.**
 Deploy complex multi-function agents that call external APIs, process data with
 NumPy and Pandas, query databases, and orchestrate ThoughtFlow cognitive
-pipelines — all from the same simple interface.
+pipelines -- all from the same simple interface.
 
 **Python-first.**
 Your code is Python.  The deployment interface is Python.  The execution
@@ -388,23 +427,9 @@ ThoughtBase itself requires only `requests`.  The cloud runtime ships with
 
 ---
 
-## Getting Access
-
-ThoughtBase is currently in **prototype** phase.
-
-To sign up for your **free API key** and **free credits**, connect with the
-creator, James Rolfsen, on LinkedIn:
-
-**[Connect on LinkedIn](https://www.linkedin.com/in/jamesrolfsen/)**
-
-Depending on demand, there may be a waitlist to ensure safe and scalable
-distribution of the service.
-
----
-
 ## Related Projects
 
-- **[ThoughtFlow](https://github.com/jrolf/thoughtflow)** — The Pythonic
+- **[ThoughtFlow](https://github.com/jrolf/thoughtflow)** -- The Pythonic
   cognitive engine for LLM systems.  Write agents locally, deploy them with
   ThoughtBase.
 
@@ -420,8 +445,6 @@ guidelines.
 ## License
 
 ThoughtBase is released under the [MIT License](LICENSE).
-
-Copyright (c) 2025 Think.dev LLC
 
 ---
 
