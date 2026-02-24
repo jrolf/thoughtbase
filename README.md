@@ -31,43 +31,63 @@
 <!-- Navigation -->
 <p align="center">
   <a href="#what-is-thoughtbase">About</a> &bull;
+  <a href="#why-thoughtbase">Why</a> &bull;
   <a href="#getting-access">Access</a> &bull;
   <a href="#installation">Install</a> &bull;
   <a href="#quick-start">Quick Start</a> &bull;
-  <a href="#full-example-multi-api-agent">Example</a> &bull;
-  <a href="#api-reference">API Reference</a> &bull;
-  <a href="#supported-libraries">Libraries</a> &bull;
-  <a href="#philosophy">Philosophy</a>
+  <a href="#secrets-management">Secrets</a> &bull;
+  <a href="#deploy-a-thoughtflow-agent">Agent Example</a> &bull;
+  <a href="#api-reference">API Reference</a>
 </p>
 
 ---
 
 ## What is ThoughtBase?
 
-**ThoughtBase** is the deployment companion for [ThoughtFlow](https://github.com/jrolf/thoughtflow).
+**ThoughtBase** is the cloud deployment layer for
+[ThoughtFlow](https://github.com/jrolf/thoughtflow).
 
-Write your AI agent locally with ThoughtFlow, then deploy it to the cloud as a
-serverless API with a single function call.  No Docker, no Terraform, no YAML,
-no deployment pipelines.  Just Python.
+Build your AI agent locally with ThoughtFlow — then deploy it as a live,
+callable cloud API with a single function call.  No Docker, no Terraform,
+no YAML, no deployment pipelines.  Just Python.
 
-ThoughtBase works with *any* Python code -- functions, classes, scripts -- but it
-is purpose-built for shipping ThoughtFlow agents into production.
+Your deployed agent runs in a pre-warmed **Python 3.12** environment with
+**200+ libraries** already installed — including ThoughtFlow itself.  Store
+your LLM API keys and credentials securely with built-in **secrets
+management**, and they are automatically available to your agent at runtime.
+
+ThoughtBase also works with *any* Python code — functions, classes, scripts —
+but it is purpose-built for shipping ThoughtFlow agents into production.
+
+---
+
+## Why ThoughtBase?
+
+| Without ThoughtBase | With ThoughtBase |
+|---|---|
+| Package code into a Docker image or Lambda zip | `deploy_agent(code)` |
+| Configure IAM roles, API Gateway, environment variables | Handled automatically |
+| Set up CI/CD pipeline for updates | `update_agent(agent_id, new_code)` |
+| Manage secrets in AWS Secrets Manager or SSM | `set_secrets({"OPENAI_API_KEY": "sk-..."})` |
+| Provision a server, scale manually | Serverless — scales to zero, scales up on demand |
+| Install dependencies in the deployment target | 200+ libraries pre-installed |
+
+**One dependency** (`requests`).  **One function call** to deploy.  **Zero
+infrastructure** to manage.
 
 ---
 
 ## Getting Access
 
-ThoughtBase is currently in **prototype** phase.
+ThoughtBase is in **early access**.
 
-To sign up for your **free API key** and **free credits**, connect with the
+To get your **free API key** and **free starter credits**, connect with the
 creator, James Rolfsen, on LinkedIn:
 
 **[Connect on LinkedIn](https://www.linkedin.com/in/jamesrolfsen/)**
 
-Depending on demand, there may be a waitlist to ensure safe and scalable
-distribution of the service.
-
-Once you have your key, you're ready to install and start deploying.
+You'll typically receive your key within 24 hours.  Once you have it, you're
+ready to install and start deploying.
 
 ---
 
@@ -77,7 +97,7 @@ Once you have your key, you're ready to install and start deploying.
 pip install thoughtbase
 ```
 
-The library has **one dependency** -- `requests` -- and works with Python 3.9+.
+The library has **one dependency** — `requests` — and works with Python 3.9+.
 
 ```bash
 # Upgrade to the latest version
@@ -86,9 +106,6 @@ pip install --upgrade thoughtbase
 # Check your installed version
 python -c "import thoughtbase; print(thoughtbase.__version__)"
 ```
-
-To pin to a specific version, use `pip install thoughtbase==X.Y.Z` where the
-latest version is shown in the badge above.
 
 If you also want ThoughtFlow locally (for authoring agents):
 
@@ -116,7 +133,7 @@ from thoughtbase import set_api_key
 set_api_key("your-key-here")
 ```
 
-Once set, every subsequent function call uses it automatically -- you don't
+Once set, every subsequent function call uses it automatically — you don't
 have to pass it again.
 
 ### 2. Deploy an agent (3 lines)
@@ -169,127 +186,192 @@ before committing it to a deployed agent.
 
 ---
 
-## Full Example: Multi-API Agent
+## Secrets Management
 
-Here is a complete example that deploys a multi-function agent which answers
-questions about any US zip code by aggregating data from four different
-external APIs (location, elevation, weather, and sunrise/sunset):
+ThoughtBase provides built-in secrets management so your deployed agents can
+access LLM API keys, database credentials, and other sensitive values
+**without embedding them in code**.
+
+### Store secrets (one-time setup)
 
 ```python
-import json
-from thoughtbase import set_api_key, deploy_agent, call_agent
+from thoughtbase import set_secrets, list_secrets
 
-set_api_key("your-key-here")
+# Store one or more secrets — values are encrypted at rest
+set_secrets({
+    "OPENAI_API_KEY": "sk-abc123...",
+    "DB_URL": "postgres://user:pass@host/db",
+})
 
-# -----------------------------------------------------------------------
-# Define the agent code as a Python string
-# -----------------------------------------------------------------------
+# Verify what's stored (names only — values are never returned)
+print(list_secrets())
+# {'secret_names': ['OPENAI_API_KEY', 'DB_URL']}
+```
+
+### Access secrets in your deployed code
+
+Inside the cloud sandbox, all stored secrets are automatically available as a
+plain Python dict named `SECRETS`:
+
+```python
+# This code runs in the cloud — SECRETS is injected automatically
+def my_agent(query):
+    import openai
+    openai.api_key = SECRETS["OPENAI_API_KEY"]
+    # ... use the key normally ...
+```
+
+### Request-level secrets (per-call override)
+
+You can also pass secrets at call time.  These are merged with stored secrets
+and take priority on name collision:
+
+```python
+result = call_agent(agent_id, "my_fn", input_data,
+                    secrets={"TEMP_TOKEN": "tok-xyz..."})
+```
+
+### Delete secrets
+
+```python
+from thoughtbase import delete_secrets
+
+delete_secrets(["DB_URL"])
+```
+
+### Design notes
+
+- **Per-user, not per-agent.** All of your agents share the same secret store.
+- **No value retrieval.** Secret values can never be read back through the API —
+  they are only injected into the sandbox at runtime.
+- **String values only.** If you need structured data, JSON-encode it and parse
+  inside your function.
+
+---
+
+## Deploy a ThoughtFlow Agent
+
+This is the full workflow: store your LLM credentials, deploy a ThoughtFlow
+agent, and call it from anywhere.
+
+```python
+from thoughtbase import set_secrets, deploy_agent, call_agent
+
+# -- Step 1: Store your LLM key (one-time) --------------------------------
+
+set_secrets({"OPENAI_API_KEY": "sk-abc123..."})
+
+# -- Step 2: Define a ThoughtFlow agent ------------------------------------
 
 agent_code = '''
-import requests, json
+from thoughtflow import LLM, MEMORY, THOUGHT
 
-def zipcode_location(zipcode):
-    """Look up the city, state, and coordinates for a US zip code."""
-    r = requests.get("http://api.zippopotam.us/us/" + str(zipcode))
-    loc = r.json()["places"][0]
-    return {
-        "place": loc["place name"],
-        "state": loc["state"],
-        "lat": float(loc["latitude"]),
-        "lon": float(loc["longitude"]),
-    }
+def summarize(text):
+    """Summarize text using ThoughtFlow + OpenAI."""
+    llm = LLM("openai:gpt-4o", key=SECRETS["OPENAI_API_KEY"])
 
-def location_elevation(loc):
-    """Get the elevation for a lat/lon pair."""
-    loc_str = str(loc["lat"]) + "," + str(loc["lon"])
-    params = {"locations": loc_str}
-    r = requests.get("https://api.open-elevation.com/api/v1/lookup", params=params)
-    meters = int(float(r.json()["results"][0]["elevation"]))
-    return {"elevation_meters": meters, "elevation_feet": int(meters * 3.28084)}
+    memory = MEMORY()
+    memory.set_var("text", text)
 
-def location_weather(loc):
-    """Get the current weather for a lat/lon pair."""
-    loc_str = str(loc["lat"]) + "," + str(loc["lon"])
-    r = requests.get("https://wttr.in/" + loc_str + "?format=%C+%t")
-    return str(r.text)
+    thought = THOUGHT(
+        name="summarize",
+        llm=llm,
+        prompt="Summarize the following in 2-3 concise sentences:\\n\\n{text}",
+    )
+    memory = thought(memory)
 
-def location_sunlight(loc):
-    """Get sunrise/sunset times for a lat/lon pair."""
-    params = {"lat": loc["lat"], "lng": loc["lon"], "formatted": 1}
-    r = requests.get("https://api.sunrise-sunset.org/json", params=params)
-    sun = r.json()["results"]
-    return {
-        "sunrise": sun["sunrise"] + " GMT",
-        "sunset": sun["sunset"] + " GMT",
-        "solar_noon": sun["solar_noon"] + " GMT",
-        "day_length": sun["day_length"] + " GMT",
-    }
-
-def get_zip_info(zipcode):
-    """Aggregate location, elevation, weather, and sunlight for a zip code."""
-    info = {"target_zipcode": str(zipcode)}
-    try:
-        loc = zipcode_location(zipcode)
-        info["location"] = loc
-    except Exception:
-        info["location"] = "Zipcode not found."
-        return info
-    try:
-        info["elevation"] = location_elevation(loc)
-    except Exception:
-        info["elevation"] = "Elevation data not found."
-    try:
-        info["weather"] = location_weather(loc)
-    except Exception:
-        info["weather"] = "Weather data not found."
-    try:
-        info["sunlight"] = location_sunlight(loc)
-    except Exception:
-        info["sunlight"] = "Sunlight data not found."
-    return info
+    return memory.get_var("summarize_result")
 '''
 
-# -----------------------------------------------------------------------
-# Deploy it
-# -----------------------------------------------------------------------
+# -- Step 3: Deploy it ----------------------------------------------------
 
 result = deploy_agent(agent_code)
 agent_id = result["api_id"]
-
 print(f"Deployed!  Agent ID: {agent_id}")
 
-# -----------------------------------------------------------------------
-# Call it
-# -----------------------------------------------------------------------
+# -- Step 4: Call it from anywhere ----------------------------------------
 
-output = call_agent(agent_id, "get_zip_info", 78749)
-print(json.dumps(output, indent=4))
+article = """
+ThoughtFlow is a Pythonic cognitive engine for building LLM-powered agents.
+It provides four primitives — LLM, MEMORY, THOUGHT, and ACTION — that
+compose into arbitrarily complex workflows.  The library has zero
+dependencies and is designed for serverless deployment with sub-100ms
+cold starts.
+"""
+
+summary = call_agent(agent_id, "summarize", article)
+print(summary)
 ```
 
-The response looks like:
+### Passing credentials at call time
 
-```json
-{
-    "target_zipcode": "78749",
-    "location": {
-        "place": "Austin",
-        "state": "Texas",
-        "lat": 30.2166,
-        "lon": -97.8508
-    },
-    "elevation": {
-        "elevation_meters": 234,
-        "elevation_feet": 767
-    },
-    "weather": "Sunny +74 F.",
-    "sunlight": {
-        "sunrise": "12:38:05 PM GMT",
-        "sunset": "12:41:39 AM GMT",
-        "solar_noon": "6:39:52 PM GMT",
-        "day_length": "12:03:34 GMT"
-    }
-}
+If you prefer not to store secrets server-side, you can pass them per-call
+instead:
+
+```python
+output = call_agent(
+    agent_id, "summarize", article,
+    secrets={"OPENAI_API_KEY": "sk-abc123..."},
+)
 ```
+
+This is useful when different callers need to use their own API keys.
+
+---
+
+## How It Works
+
+```
+ Your Machine                         ThoughtBase Cloud
+┌──────────────────┐              ┌─────────────────────────┐
+│                  │  set_secrets │                         │
+│  Store LLM keys  ├─────────────►  Encrypted secret store  │
+│  and credentials │              │                         │
+└──────────────────┘              └────────────┬────────────┘
+                                               │
+┌──────────────────┐              ┌────────────▼────────────┐
+│                  │ deploy_agent │                         │
+│  Python / TF     ├─────────────►  Stored as serverless    │
+│  agent code      │              │  API (AWS Lambda)       │
+└──────────────────┘              └────────────┬────────────┘
+                                               │
+┌──────────────────┐              ┌────────────▼────────────┐
+│                  │  call_agent  │  Executes your code     │
+│  Any Python      ├─────────────►  with SECRETS injected,  │
+│  environment     │◄─────────────┤  returns the result     │
+└──────────────────┘    result    └─────────────────────────┘
+```
+
+1. **Store credentials** with `set_secrets()` — they're encrypted and
+   available to all your agents automatically.
+2. **Write your agent** using ThoughtFlow, plain Python, or both.
+3. **Deploy it** with `deploy_agent(code)` — it becomes a serverless API.
+4. **Call it** with `call_agent(agent_id, fname, input)` from any Python
+   environment.
+5. **Get the result** back as a Python object.
+
+There is no container to manage, no server to provision, and no infrastructure
+to configure.  Your code runs in a pre-warmed Python 3.12 environment with
+200+ libraries already installed.
+
+---
+
+## Use Cases
+
+**AI summarization service** — Deploy a ThoughtFlow agent that summarizes
+documents, emails, or articles.  Call it from your web app backend.
+
+**Classification and routing** — Ship an agent that classifies incoming
+requests by intent and routes them to the right handler.
+
+**Data enrichment pipeline** — Deploy an agent that fetches data from
+multiple APIs, aggregates it, and returns a structured result.
+
+**Multi-agent system** — Deploy multiple agents that call each other via
+ThoughtBase, each handling a different stage of a complex workflow.
+
+**Cognitive API endpoint** — Put any ThoughtFlow pipeline
+(THOUGHT chains, DECIDE branches, PLAN steps) behind a callable endpoint.
 
 ---
 
@@ -306,28 +388,43 @@ value of the `THB_API_KEY` environment variable is used.
 
 ### Agent Deployment
 
+Deploy, update, and manage your serverless agents.
+
 | Function | Description |
 |---|---|
-| `deploy_agent(code, info, key)` | Deploy Python code as a new serverless agent. Returns a dict containing the `api_id` you use to call it later. |
+| `deploy_agent(code, info, key)` | Deploy Python code as a new serverless agent. Returns a dict containing the `api_id`. |
 | `update_agent(agent_id, code, info, key)` | Update the code or metadata of an existing deployed agent. |
 | `list_agents(key)` | List all agents you have deployed. |
 | `get_agent_info(agent_id, key)` | Get metadata about a deployed agent. |
 
 ### Execution
 
+Call your deployed agents or run one-shot tests in the cloud.
+
 | Function | Description |
 |---|---|
-| `call_agent(agent_id, fname, input_obj, key)` | Call a function by name inside a deployed agent. |
-| `test_agent(code, fname, input_obj, key)` | One-shot cloud execution without deploying. Useful for testing before you commit to a permanent endpoint. |
+| `call_agent(agent_id, fname, input_obj, key, secrets)` | Call a function by name inside a deployed agent. Optionally pass request-level `secrets`. |
+| `test_agent(code, fname, input_obj, key, secrets)` | One-shot cloud execution without deploying. Optionally pass request-level `secrets`. |
 
 Both `call_agent` and `test_agent` accept a `full=True` option to return the
 complete backend response envelope instead of just the result value.
+
+### Secrets Management
+
+Store and manage credentials that are automatically injected into the
+execution sandbox as a `SECRETS` dict.
+
+| Function | Description |
+|---|---|
+| `set_secrets(secrets, key)` | Store one or more secrets (dict of name-value pairs). Existing names are overwritten. |
+| `list_secrets(key)` | List stored secret names. Values are never returned through the API. |
+| `delete_secrets(names, key)` | Delete one or more secrets by name. |
 
 ### Account Management
 
 | Function | Description |
 |---|---|
-| `get_balance(key)` | Check your remaining credit balance. Every API call consumes credits from your account. |
+| `get_balance(key)` | Check your remaining credit balance. |
 | `get_user_info(key)` | Get information about your account. |
 | `update_user_info(new_info, key)` | Update your account information. |
 | `gen_key(role, key)` | Generate a new API key for your account. |
@@ -357,11 +454,11 @@ test, list, etc.) consumes a small number of credits from your account.
 
 The cloud runtime comes pre-loaded with **200+ Python modules**, including:
 
+- **AI / Agents**: `thoughtflow`
 - **Data science**: `numpy`, `pandas`, `statistics`
 - **Databases**: `sqlalchemy`, `sqlite3`, `pymongo`, `pymysql`, `psycopg2`, `redis`
 - **Networking**: `requests`, `urllib3`, `http`, `socket`
 - **AWS**: `boto3`, `botocore`, `s3transfer`
-- **AI / Agents**: `thoughtflow`
 - **Serialization**: `json`, `csv`, `pickle`, `xml`
 - **Standard library**: the full Python 3.12 stdlib
 
@@ -374,49 +471,18 @@ print(supported())
 
 ---
 
-## How It Works
-
-```
- Your Machine                        AWS Cloud
-┌──────────────┐                  ┌──────────────────┐
-│              │   deploy_agent   │                  │
-│  Python code ├─────────────────►│  Stored as a     │
-│  (string)    │                  │  serverless API  │
-│              │                  │                  │
-└──────────────┘                  └────────┬─────────┘
-                                           │
-┌──────────────┐                  ┌────────▼─────────┐
-│              │   call_agent     │                  │
-│  Any Python  ├─────────────────►│  Executes your   │
-│  environment │◄─────────────────┤  function, sends │
-│              │    result        │  back the result │
-└──────────────┘                  └──────────────────┘
-```
-
-1. **You write** Python code -- functions, classes, ThoughtFlow agents -- as a string.
-2. **`deploy_agent`** sends it to a serverless backend (AWS Lambda behind API Gateway).
-3. **The backend stores it** and returns an `agent_id`.
-4. **`call_agent`** invokes any function inside the deployed code by name.
-5. **The result** is returned as a Python object.
-
-There is no container to manage, no server to provision, and no infrastructure
-to configure.  Your code runs in a pre-warmed Python 3.12 environment with
-200+ libraries already installed.
-
----
-
 ## Philosophy
 
-ThoughtBase follows the same design principles as ThoughtFlow:
+ThoughtBase extends ThoughtFlow's design principles to cloud deployment:
 
 **Simple things should be simple.**
 Deploying a function should be one line of code.  Calling it should be one line.
 No configuration files, no build steps, no deployment ceremonies.
 
 **Difficult things should be possible.**
-Deploy complex multi-function agents that call external APIs, process data with
+Deploy complex multi-function agents that call LLMs, process data with
 NumPy and Pandas, query databases, and orchestrate ThoughtFlow cognitive
-pipelines -- all from the same simple interface.
+pipelines — all from the same simple interface.
 
 **Python-first.**
 Your code is Python.  The deployment interface is Python.  The execution
@@ -431,7 +497,7 @@ ThoughtBase itself requires only `requests`.  The cloud runtime ships with
 
 ## Related Projects
 
-- **[ThoughtFlow](https://github.com/jrolf/thoughtflow)** -- The Pythonic
+- **[ThoughtFlow](https://github.com/jrolf/thoughtflow)** — The Pythonic
   cognitive engine for LLM systems.  Write agents locally, deploy them with
   ThoughtBase.
 

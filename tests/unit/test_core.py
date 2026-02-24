@@ -8,13 +8,16 @@ from thoughtbase.core import (
     SUPPORTED,
     call_agent,
     del_key,
+    delete_secrets,
     deploy_agent,
     gen_key,
     get_agent_info,
     get_balance,
     get_user_info,
     list_agents,
+    list_secrets,
     set_api_key,
+    set_secrets,
     supported,
     update_agent,
     update_user_info,
@@ -275,3 +278,102 @@ class TestDelKey:
         del_key("old-key", key="k")
         assert cap["json"]["request"]["key_to_delete"] == "old-key"
         assert cap["json"]["request"]["func_name"] == "del_key"
+
+
+# -----------------------------------------------------------------------
+# Secrets management
+# -----------------------------------------------------------------------
+
+
+class TestSetSecrets:
+    """Tests for set_secrets()."""
+
+    def test_sends_correct_func_name(self, capture_post):
+        """set_secrets should request func_name set_secrets."""
+        cap = capture_post({"stored": ["MY_KEY"]})
+        set_secrets({"MY_KEY": "val"}, key="k")
+        assert cap["url"] == _ADMIN_URL
+        assert cap["json"]["request"]["func_name"] == "set_secrets"
+
+    def test_sends_secrets_dict(self, capture_post):
+        """set_secrets should include the secrets dict in the request."""
+        cap = capture_post({"stored": ["A", "B"]})
+        set_secrets({"A": "1", "B": "2"}, key="k")
+        assert cap["json"]["request"]["secrets"] == {"A": "1", "B": "2"}
+
+    def test_falls_back_to_env_key(self, mock_api_key, capture_post):  # noqa: ARG002
+        """set_secrets with no explicit key should use THB_API_KEY."""
+        cap = capture_post({"stored": ["X"]})
+        set_secrets({"X": "val"})
+        assert cap["json"]["api_key"] == "test-key-abc123"
+
+
+class TestListSecrets:
+    """Tests for list_secrets()."""
+
+    def test_sends_correct_func_name(self, capture_post):
+        """list_secrets should request func_name list_secrets."""
+        cap = capture_post({"secret_names": ["A", "B"]})
+        list_secrets(key="k")
+        assert cap["url"] == _ADMIN_URL
+        assert cap["json"]["request"]["func_name"] == "list_secrets"
+
+    def test_returns_payload(self, mock_admin_post):
+        """list_secrets should return the response payload."""
+        mock_admin_post({"secret_names": ["X"]})
+        result = list_secrets(key="k")
+        assert result == {"secret_names": ["X"]}
+
+
+class TestDeleteSecrets:
+    """Tests for delete_secrets()."""
+
+    def test_sends_correct_func_name(self, capture_post):
+        """delete_secrets should request func_name delete_secrets."""
+        cap = capture_post({"deleted": ["A"]})
+        delete_secrets(["A"], key="k")
+        assert cap["url"] == _ADMIN_URL
+        assert cap["json"]["request"]["func_name"] == "delete_secrets"
+
+    def test_sends_names_list(self, capture_post):
+        """delete_secrets should include the names list in the request."""
+        cap = capture_post({"deleted": ["A", "B"]})
+        delete_secrets(["A", "B"], key="k")
+        assert cap["json"]["request"]["names"] == ["A", "B"]
+
+
+# -----------------------------------------------------------------------
+# Secrets parameter on execution functions
+# -----------------------------------------------------------------------
+
+
+class TestCallAgentSecrets:
+    """Tests for the secrets parameter on call_agent()."""
+
+    def test_includes_secrets_when_provided(self, capture_post):
+        """call_agent with secrets should include them in the body."""
+        cap = capture_post("ok", admin=False)
+        call_agent("agent-1", "fn", key="k", secrets={"TOK": "abc"})
+        assert cap["json"]["secrets"] == {"TOK": "abc"}
+
+    def test_omits_secrets_when_none(self, capture_post):
+        """call_agent without secrets should not include the key."""
+        cap = capture_post("ok", admin=False)
+        call_agent("agent-1", "fn", key="k")
+        assert "secrets" not in cap["json"]
+
+
+class TestTestAgentSecrets:
+    """Tests for the secrets parameter on test_agent()."""
+
+    def test_includes_secrets_when_provided(self, capture_post):
+        """test_agent with secrets should include them in the body."""
+        cap = capture_post(42, admin=False)
+        run_test_agent("code", "fn", key="k", secrets={"KEY": "val"})
+        assert cap["json"]["secrets"] == {"KEY": "val"}
+
+    def test_omits_secrets_when_none(self, capture_post):
+        """test_agent without secrets should not include the key."""
+        cap = capture_post(42, admin=False)
+        run_test_agent("code", "fn", key="k")
+        assert "secrets" not in cap["json"]

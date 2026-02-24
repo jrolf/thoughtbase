@@ -223,7 +223,8 @@ def get_agent_info(agent_id, key=""):
 # ---------------------------------------------------------------------------
 
 
-def test_agent(code, fname, input_obj=None, key="", full=False):
+def test_agent(code, fname, input_obj=None, key="", full=False,
+               secrets=None):
     """Execute code on the cloud without deploying it.
 
     This is a one-shot test run.  The code is sent to the serverless
@@ -243,6 +244,10 @@ def test_agent(code, fname, input_obj=None, key="", full=False):
     full : bool, optional
         If ``True``, return the full backend response instead of just
         the result value.
+    secrets : dict, optional
+        Request-level secrets to inject into the sandbox for this call.
+        These are merged with any stored secrets (and override on name
+        collision).  Useful for passing credentials at call time.
 
     Returns
     -------
@@ -265,6 +270,8 @@ def test_agent(code, fname, input_obj=None, key="", full=False):
         "fname": fname,
         "input": input_obj,
     }
+    if secrets is not None:
+        body["secrets"] = secrets
     res = requests.post(_EXEC_URL, json=body).json()
     if full:
         return res
@@ -274,7 +281,8 @@ def test_agent(code, fname, input_obj=None, key="", full=False):
         return res
 
 
-def call_agent(agent_id, fname, input_obj=None, key="", full=False):
+def call_agent(agent_id, fname, input_obj=None, key="", full=False,
+               secrets=None):
     """Call a function inside a deployed agent.
 
     Parameters
@@ -289,6 +297,11 @@ def call_agent(agent_id, fname, input_obj=None, key="", full=False):
         API key.  Falls back to ``THB_API_KEY``.
     full : bool, optional
         If ``True``, return the full backend response.
+    secrets : dict, optional
+        Request-level secrets to inject into the sandbox for this call.
+        These are merged with any stored secrets (and override on name
+        collision).  Useful for passing credentials at call time without
+        persisting them.
 
     Returns
     -------
@@ -313,6 +326,8 @@ def call_agent(agent_id, fname, input_obj=None, key="", full=False):
         "zipped": 0,
         "input": input_obj,
     }
+    if secrets is not None:
+        body["secrets"] = secrets
     res = requests.post(_EXEC_URL, json=body).json()
     if full:
         return res
@@ -438,6 +453,106 @@ def del_key(key_to_delete, key=""):
     """
     key = _resolve_key(key)
     request = {"func_name": "del_key", "key_to_delete": key_to_delete}
+    return _admin_request(key, request)
+
+
+# ---------------------------------------------------------------------------
+# Secrets management
+# ---------------------------------------------------------------------------
+
+
+def set_secrets(secrets, key=""):
+    """Store one or more secrets in your account.
+
+    Secrets are key-value pairs persisted server-side and automatically
+    injected into every code execution sandbox as a ``SECRETS`` dict.
+    This is the recommended way to provide LLM API keys, database
+    credentials, and other sensitive values to your deployed agents
+    without embedding them in code.
+
+    Existing secret names are overwritten; new names are created.
+    Values must be strings.
+
+    Parameters
+    ----------
+    secrets : dict
+        Mapping of secret names to secret values, e.g.
+        ``{"OPENAI_API_KEY": "sk-...", "DB_URL": "postgres://..."}``.
+    key : str, optional
+        API key.  Falls back to ``THB_API_KEY``.
+
+    Returns
+    -------
+    dict
+        Confirmation with the list of stored names, e.g.
+        ``{"stored": ["OPENAI_API_KEY", "DB_URL"]}``.
+
+    Example
+    -------
+    >>> from thoughtbase import set_secrets
+    >>> set_secrets({"OPENAI_API_KEY": "sk-abc123..."})
+    {'stored': ['OPENAI_API_KEY']}
+    """
+    key = _resolve_key(key)
+    request = {"func_name": "set_secrets", "secrets": secrets}
+    return _admin_request(key, request)
+
+
+def list_secrets(key=""):
+    """List the names of your stored secrets.
+
+    Returns secret **names only** — values are never exposed through
+    this endpoint.  Secret values are only accessible inside the
+    execution sandbox via the ``SECRETS`` dict.
+
+    Parameters
+    ----------
+    key : str, optional
+        API key.  Falls back to ``THB_API_KEY``.
+
+    Returns
+    -------
+    dict
+        A dict with a ``secret_names`` key, e.g.
+        ``{"secret_names": ["OPENAI_API_KEY", "DB_URL"]}``.
+
+    Example
+    -------
+    >>> from thoughtbase import list_secrets
+    >>> list_secrets()
+    {'secret_names': ['OPENAI_API_KEY', 'DB_URL']}
+    """
+    key = _resolve_key(key)
+    request = {"func_name": "list_secrets"}
+    return _admin_request(key, request)
+
+
+def delete_secrets(names, key=""):
+    """Delete one or more secrets by name.
+
+    Only secrets that actually existed are reported as deleted.
+
+    Parameters
+    ----------
+    names : list
+        List of secret name strings to remove.
+    key : str, optional
+        API key.  Falls back to ``THB_API_KEY``.
+
+    Returns
+    -------
+    dict
+        Confirmation with the names that were deleted, e.g.
+        ``{"deleted": ["OPENAI_API_KEY"]}``.
+
+    Example
+    -------
+    >>> from thoughtbase import delete_secrets
+    >>> delete_secrets(["OPENAI_API_KEY"])
+    {'deleted': ['OPENAI_API_KEY']}
+    """
+    key = _resolve_key(key)
+    request = {"func_name": "delete_secrets", "names": names}
     return _admin_request(key, request)
 
 
@@ -715,73 +830,75 @@ WELCOME = """
   THOUGHTBASE — Deploy ThoughtFlow Agents to the Cloud
 ================================================================================
 
-Welcome to ThoughtBase — the fastest way to deploy Python-based AI agents
-as serverless cloud APIs.
+Welcome to ThoughtBase — the cloud deployment layer for ThoughtFlow.
 
-ThoughtBase is the deployment companion for ThoughtFlow.  Write your agent
-logic locally, deploy it in one line, and call it from anywhere.
+Build AI agents locally with ThoughtFlow, then deploy them as serverless
+cloud APIs with a single function call.  No Docker, no Terraform, no YAML.
+Just Python.
 
 --------------------------------------------------------------------------------
-  HOW TO GET ACCESS
+  GET ACCESS
 --------------------------------------------------------------------------------
 
-To sign up for your FREE API key and FREE credits, connect with the creator,
-James Rolfsen, on LinkedIn and request access:
+Connect with the creator, James Rolfsen, on LinkedIn for your FREE API key
+and starter credits:
 
     https://www.linkedin.com/in/jamesrolfsen/
 
-Depending on demand, there may be a waitlist to ensure safe and scalable
-distribution of this service.
-
 --------------------------------------------------------------------------------
-  QUICK START — Deploy an Agent in 3 Lines
+  QUICK START
 --------------------------------------------------------------------------------
 
-    from thoughtbase import *
+  1. Set your API key:
 
+    from thoughtbase import set_api_key
+    set_api_key("your-key-here")
+
+  2. Deploy an agent:
+
+    from thoughtbase import deploy_agent
     code = "def greet(name): return f'Hello, {name}!'"
-    result = deploy_agent(code, key="YOUR_API_KEY")
+    result = deploy_agent(code)
 
-That's it.  Your function is now a live cloud API.
+  3. Call it from anywhere:
 
-Call it from any Python environment:
-
-    from thoughtbase import *
-
-    agent_id = result["api_id"]
-    output = call_agent(agent_id, "greet", "World", key="YOUR_API_KEY")
+    from thoughtbase import call_agent
+    output = call_agent(result["api_id"], "greet", "World")
     print(output)  # -> Hello, World!
 
 --------------------------------------------------------------------------------
-  SUPPORTED LIBRARIES
+  SECRETS MANAGEMENT
 --------------------------------------------------------------------------------
 
-The cloud runtime supports 200+ Python modules including:
+Store LLM API keys and credentials securely — they are automatically
+injected into your agent's sandbox at runtime:
 
-    numpy, pandas, requests, boto3, thoughtflow, sqlalchemy,
-    pymongo, redis, psycopg2, and the full Python standard library.
+    from thoughtbase import set_secrets
+    set_secrets({"OPENAI_API_KEY": "sk-..."})
+
+Inside your deployed code, access them via the SECRETS dict:
+
+    openai.api_key = SECRETS["OPENAI_API_KEY"]
+
+--------------------------------------------------------------------------------
+  CLOUD RUNTIME
+--------------------------------------------------------------------------------
+
+Pre-warmed Python 3.12 with 200+ modules including:
+
+    thoughtflow, numpy, pandas, requests, boto3, sqlalchemy,
+    pymongo, redis, psycopg2, and the full standard library.
 
 Run `supported()` to see the complete list.
 
 --------------------------------------------------------------------------------
-  DISCLAIMER
+  LINKS
 --------------------------------------------------------------------------------
 
-This product and library are currently in a Prototype phase of development.
-The current configuration and settings of the underlying system are under
-active development and may change.  We expect the core configurations to be
-stable and fixed when we announce a public beta.
-
-This product is owned by Think.dev LLC.
-
---------------------------------------------------------------------------------
-  FEEDBACK
---------------------------------------------------------------------------------
-
-We are excited to see what you build with ThoughtBase!
-To submit feedback or report bugs, please email: info@think.dev
-
-Happy building!
+    PyPI:       https://pypi.org/project/thoughtbase/
+    GitHub:     https://github.com/jrolf/thoughtbase
+    ThoughtFlow https://github.com/jrolf/thoughtflow
+    Contact:    james@think.dev
 
 ================================================================================
 """

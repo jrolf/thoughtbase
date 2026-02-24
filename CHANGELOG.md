@@ -8,13 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Nothing yet
+- Secrets management: `set_secrets()`, `list_secrets()`, `delete_secrets()` for storing credentials server-side
+- `secrets` parameter on `call_agent()` and `test_agent()` for passing request-level secrets per-call
+- New README with secrets management docs, ThoughtFlow agent hero example, "Why ThoughtBase?" section, and use cases
+- Example: `02_deploy_thoughtflow_agent.py` — deploy a real ThoughtFlow summarization agent
+- Example: `03_secrets_and_llm_agent.py` — end-to-end secrets setup + LLM classification agent
+- Example: `00_validate_endpoints.py` — end-to-end endpoint validation script
 
 ### Changed
-- Nothing yet
-
-### Fixed
-- Nothing yet
+- Exec endpoint migrated to `thoughtbase_exec_v01` (new API Gateway)
+- README fully rewritten around AI agent deployment narrative
 
 ---
 

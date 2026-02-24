@@ -1,83 +1,42 @@
 """
 ThoughtBase: Deploy a ThoughtFlow Agent
 
-This example deploys a multi-function agent that aggregates data about
-a US zip code from four external APIs — location, elevation, weather,
-and sunrise/sunset — into a single response.
+This example deploys a real ThoughtFlow agent that uses LLM, MEMORY,
+and THOUGHT to summarize text.  It reads the OpenAI API key from the
+SECRETS dict, which is automatically injected by ThoughtBase.
 
-Before running, set your API key:
-    export THB_API_KEY="your-key-here"
+Prerequisites:
+    1. Set your ThoughtBase API key:
+       export THB_API_KEY="your-key-here"
+
+    2. Store your OpenAI key as a ThoughtBase secret (one-time):
+       >>> from thoughtbase import set_secrets
+       >>> set_secrets({"OPENAI_API_KEY": "sk-..."})
 """
-
-import json
 
 from thoughtbase import call_agent, deploy_agent
 
 
-# -- Define the agent code -------------------------------------------------
+# -- Define the ThoughtFlow agent code ------------------------------------
 
 agent_code = '''
-import requests, json
+from thoughtflow import LLM, MEMORY, THOUGHT
 
-def zipcode_location(zipcode):
-    """Look up the city, state, and coordinates for a US zip code."""
-    r = requests.get("http://api.zippopotam.us/us/" + str(zipcode))
-    loc = r.json()["places"][0]
-    return {
-        "place": loc["place name"],
-        "state": loc["state"],
-        "lat": float(loc["latitude"]),
-        "lon": float(loc["longitude"]),
-    }
+def summarize(text):
+    """Summarize text using ThoughtFlow + OpenAI."""
+    llm = LLM("openai:gpt-4o", key=SECRETS["OPENAI_API_KEY"])
 
-def location_elevation(loc):
-    """Get the elevation for a lat/lon pair."""
-    loc_str = str(loc["lat"]) + "," + str(loc["lon"])
-    params = {"locations": loc_str}
-    r = requests.get("https://api.open-elevation.com/api/v1/lookup", params=params)
-    meters = int(float(r.json()["results"][0]["elevation"]))
-    return {"elevation_meters": meters, "elevation_feet": int(meters * 3.28084)}
+    memory = MEMORY()
+    memory.set_var("text", text)
 
-def location_weather(loc):
-    """Get the current weather for a lat/lon pair."""
-    loc_str = str(loc["lat"]) + "," + str(loc["lon"])
-    r = requests.get("https://wttr.in/" + loc_str + "?format=%C+%t")
-    return str(r.text)
+    thought = THOUGHT(
+        name="summarize",
+        llm=llm,
+        prompt="Summarize the following in 2-3 concise sentences:\\n\\n{text}",
+    )
+    memory = thought(memory)
 
-def location_sunlight(loc):
-    """Get sunrise/sunset times for a lat/lon pair."""
-    params = {"lat": loc["lat"], "lng": loc["lon"], "formatted": 1}
-    r = requests.get("https://api.sunrise-sunset.org/json", params=params)
-    sun = r.json()["results"]
-    return {
-        "sunrise": sun["sunrise"] + " GMT",
-        "sunset": sun["sunset"] + " GMT",
-        "solar_noon": sun["solar_noon"] + " GMT",
-        "day_length": sun["day_length"] + " GMT",
-    }
-
-def get_zip_info(zipcode):
-    """Aggregate location, elevation, weather, and sunlight for a zip code."""
-    info = {"target_zipcode": str(zipcode)}
-    try:
-        loc = zipcode_location(zipcode)
-        info["location"] = loc
-    except Exception:
-        info["location"] = "Zipcode not found."
-        return info
-    try:
-        info["elevation"] = location_elevation(loc)
-    except Exception:
-        info["elevation"] = "Elevation data not found."
-    try:
-        info["weather"] = location_weather(loc)
-    except Exception:
-        info["weather"] = "Weather data not found."
-    try:
-        info["sunlight"] = location_sunlight(loc)
-    except Exception:
-        info["sunlight"] = "Sunlight data not found."
-    return info
+    return memory.get_var("summarize_result")
 '''
 
 
@@ -90,5 +49,14 @@ print(f"Deployed!  Agent ID: {agent_id}")
 
 # -- Call it ---------------------------------------------------------------
 
-output = call_agent(agent_id, "get_zip_info", 78749)
-print(json.dumps(output, indent=4))
+article = """
+ThoughtFlow is a Pythonic cognitive engine for building LLM-powered agents.
+It provides four primitives — LLM, MEMORY, THOUGHT, and ACTION — that
+compose into arbitrarily complex workflows.  The library has zero
+dependencies and is designed for serverless deployment with sub-100ms
+cold starts.  ThoughtBase is its deployment companion, letting you ship
+agents to the cloud in a single function call.
+"""
+
+summary = call_agent(agent_id, "summarize", article)
+print(f"\nSummary:\n{summary}")
