@@ -24,6 +24,11 @@ _EXEC_URL = "https://bdxwb8xftj.execute-api.us-east-1" + _SUFFIX
 # Environment variable used to store the user's API key
 _ENV_KEY = "THB_API_KEY"
 
+# Default timeout for all HTTP requests (connect, read) in seconds.
+# Prevents the client from hanging indefinitely on cold starts or
+# transient network issues.
+_TIMEOUT = (10, 120)
+
 
 # ---------------------------------------------------------------------------
 # Internal helpers
@@ -71,7 +76,7 @@ def _admin_request(key, request):
         JSON response if parsing fails.
     """
     body = {"api_key": key, "request": request}
-    response = requests.post(_ADMIN_URL, json=body)
+    response = requests.post(_ADMIN_URL, json=body, timeout=_TIMEOUT)
     data = response.json()
     try:
         return data["output"]["response"]
@@ -272,7 +277,7 @@ def test_agent(code, fname, input_obj=None, key="", full=False,
     }
     if secrets is not None:
         body["secrets"] = secrets
-    res = requests.post(_EXEC_URL, json=body).json()
+    res = requests.post(_EXEC_URL, json=body, timeout=_TIMEOUT).json()
     if full:
         return res
     try:
@@ -328,7 +333,7 @@ def call_agent(agent_id, fname, input_obj=None, key="", full=False,
     }
     if secrets is not None:
         body["secrets"] = secrets
-    res = requests.post(_EXEC_URL, json=body).json()
+    res = requests.post(_EXEC_URL, json=body, timeout=_TIMEOUT).json()
     if full:
         return res
     try:
