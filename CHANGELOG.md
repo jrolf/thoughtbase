@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.0.4] - 2026-02-25
+
+### Fixed
+- README logo now uses absolute GitHub raw URL so it renders correctly on PyPI
+- Added explicit HTTP request timeouts (10s connect, 120s read) to all API calls to prevent indefinite hangs
+
+---
+
 ## [0.0.3] - 2026-02-24
 
 ### Added
@@ -44,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 <!-- Release links -->
-[Unreleased]: https://github.com/jrolf/thoughtbase/compare/v0.0.3...HEAD
+[Unreleased]: https://github.com/jrolf/thoughtbase/compare/v0.0.4...HEAD
+[0.0.4]: https://github.com/jrolf/thoughtbase/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/jrolf/thoughtbase/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/jrolf/thoughtbase/releases/tag/v0.0.2
